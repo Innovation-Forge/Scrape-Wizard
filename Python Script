@@ -1,0 +1,55 @@
+# Import the requests library to make HTTP requests to web servers
+import requests
+# Import BeautifulSoup for parsing and extracting data from HTML documents
+from bs4 import BeautifulSoup
+# Import os library to interact with the operating system, like creating directories
+import os
+# Import urllib.parse to handle URL manipulation tasks, such as joining parts of a URL
+import urllib.parse
+
+# Define a function to handle the downloading of images from the webpage
+def download_images(images, base_url):
+    # Check if there's an 'images' directory in the current directory; if not, create one
+    if not os.path.exists('images'):
+        os.makedirs('images')
+    # Loop through each image tag found in the soup object
+    for img in images:
+        # Extract the 'src' attribute, which contains the URL of the image
+        src = img.get('src')
+        # Ensure the image URL is complete (absolute URL) for downloading
+        src = urllib.parse.urljoin(base_url, src)
+        # Extract the image file name from the src URL
+        image_name = os.path.basename(src)
+        # Use requests to download the image content
+        response = requests.get(src)
+        # Open a file in binary write mode in the 'images' directory with the image's name
+        with open(f'images/{image_name}', 'wb') as f:
+            f.write(response.content)
+        # Print a message to the console indicating the image has been downloaded
+        print(f'Downloaded {image_name}')
+
+# Define a function to process the specified webpage
+def process_webpage(url):
+    # Send a GET request to the webpage URL and store the response
+    response = requests.get(url)
+    # Parse the HTML content of the response using BeautifulSoup
+    soup = BeautifulSoup(response.text, 'html.parser')
+    # Extract and print the title of the webpage from the soup object
+    page_title = soup.title.text
+    print(f'Page Title: {page_title}')
+    # Find all 'a' tags with an href attribute (links) and print their absolute URLs
+    links = soup.find_all('a', href=True)
+    print('Page Links:')
+    for link in links:
+        # Convert relative link paths to absolute URLs and print them
+        full_url = urllib.parse.urljoin(url, link.get('href'))
+        print(full_url)
+    # Find all 'img' tags (images) on the page to prepare for downloading
+    images = soup.find_all('img')
+    # Call the download_images function to download each image found
+    download_images(images, url)
+
+# The URL of the target website to be processed
+url = 'https://casl.website/'
+# Execute the function to start processing the webpage
+process_webpage(url)
